@@ -5946,6 +5946,7 @@
 				MACOSX_DEPLOYMENT_TARGET = 12.0;
 				SKIP_INSTALL = YES;
 				TVOS_DEPLOYMENT_TARGET = 15.0;
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Debug;
 		};
@@ -5997,6 +5998,7 @@
 				SKIP_INSTALL = YES;
 				TVOS_DEPLOYMENT_TARGET = 15.0;
 				VALIDATE_PRODUCT = YES;
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Release;
 		};

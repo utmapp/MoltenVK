@@ -2638,6 +2638,7 @@
 					"-Wunused-but-set-variable",
 					"-Wno-vla-cxx-extension",
 				);
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Debug;
 		};
@@ -2717,6 +2718,7 @@
 					"-Wunused-but-set-variable",
 					"-Wno-vla-cxx-extension",
 				);
+				XROS_DEPLOYMENT_TARGET = 1.0;
 			};
 			name = Release;
 		};
