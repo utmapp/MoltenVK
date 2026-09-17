@@ -1302,7 +1302,9 @@ MTLMeshRenderPipelineDescriptor* MVKGraphicsPipeline::newMTLMeshRenderPipelineDe
 
 	MTLMeshRenderPipelineDescriptor* plDesc = [MTLMeshRenderPipelineDescriptor new];    // retained
 
-    plDesc.rasterSampleCount = mvkSampleCountFromVkSampleCountFlagBits(pCreateInfo->pMultisampleState->rasterizationSamples);
+    if (_isRasterizing && pCreateInfo->pMultisampleState) {
+        plDesc.rasterSampleCount = mvkSampleCountFromVkSampleCountFlagBits(pCreateInfo->pMultisampleState->rasterizationSamples);
+    }
 
     if (!addVertexShaderToPipeline(plDesc, pCreateInfo, shaderConfig, pVertexSS, pVertexFB))
         return nullptr;
