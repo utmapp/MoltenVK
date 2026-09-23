@@ -4019,7 +4019,14 @@ VkResult MVKDevice::getMemoryHostPointerProperties(VkExternalMemoryHandleTypeFla
 		switch (handleType) {
 			case VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_ALLOCATION_BIT_EXT:
 			case VK_EXTERNAL_MEMORY_HANDLE_TYPE_HOST_MAPPED_FOREIGN_MEMORY_BIT_EXT:
-				pMemHostPtrProps->memoryTypeBits = _physicalDevice->getHostVisibleMemoryTypes();
+				// Imported host memory is always backed by a shared MTLBuffer, which
+				// any memory type except lazily allocated ones can be bound to.
+				// Metal on non-Apple GPUs does not support shared storage for textures.
+				pMemHostPtrProps->memoryTypeBits = _physicalDevice->getAllMemoryTypes();
+				mvkDisableFlags(pMemHostPtrProps->memoryTypeBits, _physicalDevice->getLazilyAllocatedMemoryTypes());
+				if ( !_physicalDevice->getMTLDeviceCapabilities().isAppleGPU ) {
+					mvkDisableFlags(pMemHostPtrProps->memoryTypeBits, _physicalDevice->getPrivateMemoryTypes());
+				}
 				break;
 			default:
 				pMemHostPtrProps->memoryTypeBits = 0;
