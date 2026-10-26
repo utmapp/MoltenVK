@@ -358,6 +358,7 @@ protected:
 
 	void propagateDebugName() override;
 	void validateConfig(const VkImageCreateInfo* pCreateInfo, bool isAttachment);
+	void validateExplicitRowPitch(const VkImageDrmFormatModifierExplicitCreateInfoEXT* pDrmExplicitInfo);
 	VkSampleCountFlagBits validateSamples(const VkImageCreateInfo* pCreateInfo, bool isAttachment);
 	uint32_t validateMipLevels(const VkImageCreateInfo* pCreateInfo, bool isAttachment);
 	bool validateLinear(const VkImageCreateInfo* pCreateInfo, bool isAttachment);
@@ -391,6 +392,7 @@ protected:
     std::mutex _lock;
     IOSurfaceRef _ioSurface;
 	VkDeviceSize _rowByteAlignment;
+	VkDeviceSize _explicitRowPitch = 0;		// Row pitch from VkImageDrmFormatModifierExplicitCreateInfoEXT (LINEAR), or 0
     bool _isDepthStencilAttachment;
     bool _hasExpectedTexelSize;
     bool _hasChromaSubsampling;
