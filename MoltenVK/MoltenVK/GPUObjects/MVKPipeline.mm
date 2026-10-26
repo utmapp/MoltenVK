@@ -1319,6 +1319,7 @@ MTLMeshRenderPipelineDescriptor* MVKGraphicsPipeline::newMTLMeshRenderPipelineDe
             uint32_t vbIdx = getMetalBufferIndexForVertexAttributeBinding(pVKVB->binding);
             _mtlVertexBuffers.set(vbIdx);
             _vkVertexBuffers.set(pVKVB->binding);
+            _vkVertexBindingStrides[pVKVB->binding] = pVKVB->stride;
         }
     }
 
@@ -1661,6 +1662,77 @@ bool MVKGraphicsPipeline::addVertexShaderToPipeline(MTLRenderPipelineDescriptor*
 	}
 
 	return verifyImplicitBuffers(kMVKShaderStageVertex);
+}
+
+static MSLShaderVariableFormat mvkMSLMeshVertexMemoryFormat(MTLVertexFormat f) {
+	switch (f) {
+		case MTLVertexFormatUChar:
+		case MTLVertexFormatUChar2:
+		case MTLVertexFormatUChar3:
+		case MTLVertexFormatUChar4:
+		case MTLVertexFormatUCharNormalized:
+		case MTLVertexFormatUChar2Normalized:
+		case MTLVertexFormatUChar3Normalized:
+		case MTLVertexFormatUChar4Normalized:
+			return MSL_SHADER_VARIABLE_FORMAT_UINT8;
+
+		case MTLVertexFormatChar:
+		case MTLVertexFormatChar2:
+		case MTLVertexFormatChar3:
+		case MTLVertexFormatChar4:
+		case MTLVertexFormatCharNormalized:
+		case MTLVertexFormatChar2Normalized:
+		case MTLVertexFormatChar3Normalized:
+		case MTLVertexFormatChar4Normalized:
+			return MSL_SHADER_VARIABLE_FORMAT_INT8;
+
+		case MTLVertexFormatUShort:
+		case MTLVertexFormatUShort2:
+		case MTLVertexFormatUShort3:
+		case MTLVertexFormatUShort4:
+		case MTLVertexFormatUShortNormalized:
+		case MTLVertexFormatUShort2Normalized:
+		case MTLVertexFormatUShort3Normalized:
+		case MTLVertexFormatUShort4Normalized:
+			return MSL_SHADER_VARIABLE_FORMAT_UINT16;
+
+		case MTLVertexFormatShort:
+		case MTLVertexFormatShort2:
+		case MTLVertexFormatShort3:
+		case MTLVertexFormatShort4:
+		case MTLVertexFormatShortNormalized:
+		case MTLVertexFormatShort2Normalized:
+		case MTLVertexFormatShort3Normalized:
+		case MTLVertexFormatShort4Normalized:
+			return MSL_SHADER_VARIABLE_FORMAT_INT16;
+
+		case MTLVertexFormatHalf:
+		case MTLVertexFormatHalf2:
+		case MTLVertexFormatHalf3:
+		case MTLVertexFormatHalf4:
+			return MSL_SHADER_VARIABLE_FORMAT_HALF;
+
+		case MTLVertexFormatFloat:
+		case MTLVertexFormatFloat2:
+		case MTLVertexFormatFloat3:
+		case MTLVertexFormatFloat4:
+			return MSL_SHADER_VARIABLE_FORMAT_FLOAT;
+
+		case MTLVertexFormatUInt:
+		case MTLVertexFormatUInt2:
+		case MTLVertexFormatUInt3:
+		case MTLVertexFormatUInt4:
+			return MSL_SHADER_VARIABLE_FORMAT_UINT32;
+
+		case MTLVertexFormatInt:
+		case MTLVertexFormatInt2:
+		case MTLVertexFormatInt3:
+		case MTLVertexFormatInt4:
+			return MSL_SHADER_VARIABLE_FORMAT_INT32;
+
+		default:
+			return MSL_SHADER_VARIABLE_FORMAT_OTHER;
+	}
 }
 
 struct MSLVertexFormatInfo {
@@ -2585,6 +2657,14 @@ void MVKGraphicsPipeline::addVertexInputToShaderConversionConfig(SPIRVToMSLConve
 				break;
 			}
 		}
+
+        if (shaderConfig.options.mslOptions.for_mesh_pipeline) {
+            auto memFmt = mvkMSLMeshVertexMemoryFormat(
+                getPixelFormats()->getMTLVertexFormat(pVKVA->format));
+            if (memFmt != MSL_SHADER_VARIABLE_FORMAT_OTHER) {
+                si.shaderVar.format = memFmt;
+            }
+        }
 
         shaderConfig.shaderInputs.push_back(si);
     }

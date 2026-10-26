@@ -164,8 +164,31 @@ struct DrawInfo {
 	int32_t indexed;
 	int32_t indexSize;
 	uint64_t indexBuffer;
+	uint32_t vertexStrides[kMVKMaxBufferCount];
 	uint8_t topoStrip;
 };
+
+static_assert(kMVKMaxBufferCount == 31,
+              "DrawInfo.vertexStrides must match SPIRV-Cross");
+
+static void setGeometryVertexStrides(DrawInfo& drawInfo,
+                                     MVKCommandEncoder* cmdEncoder,
+                                     MVKGraphicsPipeline* pipeline) {
+	bool dynamicStride =
+		pipeline->getDynamicStateFlags().has(MVKRenderStateFlag::VertexStride);
+	const auto& vkState = cmdEncoder->getVkGraphics();
+
+	for (size_t vkIdx : pipeline->getVkVertexBuffers()) {
+		uint32_t mtlIdx =
+			pipeline->getMetalBufferIndexForVertexAttributeBinding((uint32_t)vkIdx);
+		if (mtlIdx >= kMVKMaxBufferCount) { continue; }
+
+		drawInfo.vertexStrides[mtlIdx] =
+			dynamicStride
+				? vkState._vertexBuffers[vkIdx].stride
+				: pipeline->getVkVertexBindingStride((uint32_t)vkIdx);
+	}
+}
 
 #pragma mark -
 #pragma mark MVKCmdDraw
@@ -369,7 +392,6 @@ void MVKCmdDraw::encode(MVKCommandEncoder* cmdEncoder) {
                 } else if (pipeline->isGeometryPipeline()) {
 					DrawInfo drawInfo = {};
 
-					[cmdEncoder->_mtlRenderEncoder setObjectBytes: &drawInfo length: sizeof(drawInfo) atIndex: pipeline->getDrawInfoBufferIndex()];
 
 					auto primitiveType = cmdEncoder->getMtlGraphics().getPrimitiveType();
 					int threadCount = 0;
@@ -391,6 +413,11 @@ void MVKCmdDraw::encode(MVKCommandEncoder* cmdEncoder) {
 
 					if (_firstVertex) reportMessage(MVK_CONFIG_LOG_LEVEL_ERROR, "First vertex not supported yet.");
 					if (_firstInstance) reportMessage(MVK_CONFIG_LOG_LEVEL_ERROR, "First instance not supported yet.");
+
+					setGeometryVertexStrides(drawInfo, cmdEncoder, pipeline);
+					[cmdEncoder->_mtlRenderEncoder setObjectBytes: &drawInfo
+														 length: sizeof(drawInfo)
+														atIndex: pipeline->getDrawInfoBufferIndex()];
 
 					[cmdEncoder->_mtlRenderEncoder drawMeshThreadgroups: MTLSizeMake(threadCount, _instanceCount, 1)
 											threadsPerObjectThreadgroup: MTLSizeMake(1, 1, 1)
@@ -656,7 +683,6 @@ void MVKCmdDrawIndexed::encode(MVKCommandEncoder* cmdEncoder) {
 					drawInfo.indexBuffer = ibb.mtlBuffer.gpuAddress + idxBuffOffset;
 
 					[cmdEncoder->_mtlRenderEncoder useResource: ibb.mtlBuffer usage: MTLResourceUsageRead stages: MTLRenderStageObject];
-					[cmdEncoder->_mtlRenderEncoder setObjectBytes: &drawInfo length: sizeof(drawInfo) atIndex: pipeline->getDrawInfoBufferIndex()];
 
 					auto primitiveType = cmdEncoder->getMtlGraphics().getPrimitiveType();
 					int threadCount = 0;
@@ -678,6 +704,11 @@ void MVKCmdDrawIndexed::encode(MVKCommandEncoder* cmdEncoder) {
 
 					if (_vertexOffset) reportMessage(MVK_CONFIG_LOG_LEVEL_ERROR, "Vertex offset not supported yet.");
 					if (_firstInstance) reportMessage(MVK_CONFIG_LOG_LEVEL_ERROR, "First instance not supported yet.");
+
+					setGeometryVertexStrides(drawInfo, cmdEncoder, pipeline);
+					[cmdEncoder->_mtlRenderEncoder setObjectBytes: &drawInfo
+														 length: sizeof(drawInfo)
+														atIndex: pipeline->getDrawInfoBufferIndex()];
 
 					[cmdEncoder->_mtlRenderEncoder drawMeshThreadgroups:MTLSizeMake(threadCount, _instanceCount, 1)
 											threadsPerObjectThreadgroup:MTLSizeMake(1, 1, 1)

@@ -323,6 +323,7 @@ public:
 	const MVKStaticBitSet<kMVKMaxBufferCount>& getMtlVertexBuffers() const { return _mtlVertexBuffers; }
 	/** Returns the stride for the given vertex buffer binding (only valid for static strides) */
 	uint32_t getVertexStride(uint32_t binding) const { return _vertexStrides[binding]; }
+	uint32_t getVkVertexBindingStride(uint32_t binding) const { return _vkVertexBindingStrides[binding]; }
 	const VkViewport* getViewports() const { return _viewports; }
 	const VkRect2D* getScissors() const { return _scissors; }
 	const MTLSamplePosition* getSampleLocations() const { return _sampleLocations; }
@@ -409,6 +410,7 @@ protected:
 	MVKStaticBitSet<kMVKMaxBufferCount> _vkVertexBuffers;
 	MVKStaticBitSet<kMVKMaxBufferCount> _mtlVertexBuffers;
 	uint32_t _vertexStrides[kMVKMaxBufferCount] = {};
+	uint32_t _vkVertexBindingStrides[kMVKMaxBufferCount] = {};
 	MVKPipelineStageResourceInfo _stageResources[kMVKShaderStageFragment + 1] = {};
 
 	id<MTLComputePipelineState> _mtlTessVertexStageState = nil;
